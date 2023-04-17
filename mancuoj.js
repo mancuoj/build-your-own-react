@@ -259,10 +259,10 @@ const Mancuoj = {
 function Counter() {
   const [state, setState] = Mancuoj.useState(1)
   return (
-    <div style="display: flex; gap: 1rem;">
-      <button onClick={() => setState(c => c + 1)}>+</button>
-      Count: {state}
+    <div style="display: flex; gap: 1rem; min-height: 100vh; justify-content: center; align-items: center;">
       <button onClick={() => setState(c => c - 1)}>-</button>
+      <h1>Count: {state}</h1>
+      <button onClick={() => setState(c => c + 1)}>+</button>
     </div>
   )
 }
