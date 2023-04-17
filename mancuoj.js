@@ -151,9 +151,43 @@ function performUnitOfWork(fiber) {
   }
 }
 
+let wipFiber = null
+let hookIndex = null
+
 function updateFunctionComponent(fiber) {
+  wipFiber = fiber
+  hookIndex = 0
+  wipFiber.hooks = []
   const children = [fiber.type(fiber.props)]
   reconcileChildren(fiber, children)
+}
+
+function useState(initial) {
+  const oldHook = wipFiber.alternate && wipFiber.alternate.hooks && wipFiber.alternate.hooks[hookIndex]
+  const hook = {
+    state: oldHook ? oldHook.state : initial,
+    queue: [],
+  }
+
+  const actions = oldHook ? oldHook.queue : []
+  actions.forEach(action => {
+    hook.state = action(hook.state)
+  })
+
+  const setState = action => {
+    hook.queue.push(action)
+    wipRoot = {
+      dom: currentRoot.dom,
+      props: currentRoot.props,
+      alternate: currentRoot,
+    }
+    nextUnitOfWork = wipRoot
+    deletions = []
+  }
+
+  wipFiber.hooks.push(hook)
+  hookIndex++
+  return [hook.state, setState]
 }
 
 function updateHostComponent(fiber) {
@@ -218,14 +252,22 @@ function reconcileChildren(wipFiber, elements) {
 const Mancuoj = {
   createElement,
   render,
+  useState,
 }
 
 /** @jsx Mancuoj.createElement */
-function App({ name }) {
-  return <h1>Hello, {name}</h1>
+function Counter() {
+  const [state, setState] = Mancuoj.useState(1)
+  return (
+    <div style="display: flex; gap: 1rem;">
+      <button onClick={() => setState(c => c + 1)}>+</button>
+      Count: {state}
+      <button onClick={() => setState(c => c - 1)}>-</button>
+    </div>
+  )
 }
 
-const element = <App name="World" />
+const element = <Counter />
 
 const container = document.getElementById("root")
 Mancuoj.render(element, container)
